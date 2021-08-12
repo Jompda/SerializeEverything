@@ -1,17 +1,18 @@
 // Try to overcome https://www.npmjs.com/package/serialize-javascript
+// Get everything related to a object: https://stackoverflow.com/questions/31054910/get-functions-methods-of-a-class
 
 
 class TestClass {
     constructor(obj) {
-        for (let field of Object.getOwnPropertyNames(obj))
+        for (let field of Object.keys(obj))
             this[field] = obj[field]
     }
-    /*getProperties() {
+    getProperties() {
         const properties = new Map()
-        for (let field of Object.getOwnPropertyNames(this))
+        for (let field of Object.keys(this))
             properties.set(field, this[field])
         return properties
-    }*/
+    }
 }
 
 
@@ -24,18 +25,18 @@ const a = new TestClass({
     array: ['sure', 'sure2'],
     object: { testField: true, anotherField: 41 },
     map: new Map([['a', 1]]),
-    //set: new Set([123, 456]),
+    set: new Set([123, 456]),
     date: new Date(),
     infinity: Infinity,
-    regex: /([^\s]+)/g,
-    //function: () => { return true },
+    //regex: /([^\s]+)/g, // TODO: Escape every escape character
+    function: () => { return true },
     bigint: BigInt(10)
 })
-//console.log('properties:', a.getProperties())
+console.log('properties:', a.getProperties())
+console.log(Object.keys(a.constructor.prototype))
 
 
 const b = stringify(a, undefined, '  ')
-console.log(b)
 
 
 /**
@@ -53,27 +54,24 @@ function stringify(obj, replacer, space = '') {
         // "string" | "number" | "bigint" | "boolean" | "symbol" | "undefined" | "object" | "function"
         const type = typeof value
         switch (type) {
-            case 'string':
-                return '"' + value + '"'
+            case 'string': return `"${value}"`
+            case 'boolean': return String(value)
+            case 'symbol': throw new Error('Symbols are not supported.')
+            case 'undefined': return ''
+            case 'bigint': return stringifyObject({ value: value.toString(), classConstructor: 'BigInt' })
             case 'number':
-                if (isFinite(value)) return String(value)
-                return stringifyObject({ value: 'Infinity', classConstructor: 'Number' })
-            case 'bigint':
-                return stringifyObject({ value: value.toString(), classConstructor: 'BigInt' })
-            case 'boolean':
-                return String(value)
-            case 'symbol':
-                throw new Error('Symbols are not supported.')
-            case 'undefined':
-                return ''
+                return isFinite(value)
+                    ? String(value)
+                    : stringifyObject({ value: 'Infinity', classConstructor: 'Number' })
             case 'object':
-                if (value === null) return '' + value
-                return preserveClass()
+                return value === null
+                    ? null
+                    : preserveClass()
             case 'function':
-                console.log('Skipped function:', key, value)
+                // TODO: Function serialization and deserialization.
+                return '"FunctionPlaceholder"'
                 break
-            default:
-                throw new Error('Unknown variable type:', type, 'from (key, value):', key, ',', value)
+            default: throw new Error('Unknown variable type:', type, 'from (key, value):', key, ',', value)
         }
         function preserveClass() {
             let newValue = {}
@@ -83,6 +81,10 @@ function stringify(obj, replacer, space = '') {
                 case 'Map':
                     newValue = { source: [] }
                     value.forEach((value, key) => newValue.source.push([key, value]))
+                    break
+                case 'Set':
+                    newValue = { source: [] }
+                    value.forEach((value) => newValue.source.push(value))
                     break
                 case 'Date':
                     newValue = { value: value.toISOString() }
@@ -114,7 +116,7 @@ function stringify(obj, replacer, space = '') {
         function stringifyObject(obj) {
             let separator = ''
             let result = '{'
-            const fields = Object.getOwnPropertyNames(obj)
+            const fields = Object.keys(obj)
             ++nesting
             for (let field of fields) {
                 const fieldValue = recursive(field, obj[field])
@@ -129,16 +131,16 @@ function stringify(obj, replacer, space = '') {
 }
 
 
-/*const c = JSON.parse(b, (key, value) => {
-    if (value !== null && typeof value === 'object' && 'classConstructor' in value) {
+const c = JSON.parse(b, (key, value) => {
+    /*if (value !== null && typeof value === 'object' && 'classConstructor' in value) {
         //const cls = classes.get(value.classConstructor)
 
-    }
+    }*/
     return value
-})*/
+})
 
 
-/*console.log(a)
+console.log(a)
 console.log(b)
-console.log(c)*/
+console.log(c)
 
