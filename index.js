@@ -21,47 +21,45 @@ const a = new TestClass({
     number: 1,
     string: 'yes',
     boolean: false,
-    //array: ['sure', 'sure2'],
-    //object: { testField: true },
-    //map: new Map([['a', 1]]),
+    array: ['sure', 'sure2'],
+    object: { testField: true, anotherField: 41 },
+    map: new Map([['a', 1]]),
     //set: new Set([123, 456]),
-    //date: new Date(),
+    date: new Date(),
     infinity: Infinity,
-    //regex: /([^\s]+)/g,
+    regex: /([^\s]+)/g,
     //function: () => { return true },
-    //bigInt: BigInt(10)
+    bigint: BigInt(10)
 })
 //console.log('properties:', a.getProperties())
 
 
-const b = stringify(Infinity)
+const b = stringify(a, undefined, '  ')
 console.log(b)
 
 
 /**
  * @param {*} obj 
  * @param {function(string, any)} replacer 
- * @param {string | number} space 
+ * @param {string} space 
  * @returns {string}
  */
-function stringify(obj, replacer, space) {
-    // "string" | "number" | "bigint" | "boolean" | "symbol" | "undefined" | "object" | "function"
+function stringify(obj, replacer, space = '') {
+    const eol = space ? '\n' : '', spacer = space ? ' ' : ''
     let nesting = 0
     return recursive('', obj)
     function recursive(key, value) {
         if (replacer) value = replacer(key, value)
-        const type = typeof obj
+        // "string" | "number" | "bigint" | "boolean" | "symbol" | "undefined" | "object" | "function"
+        const type = typeof value
         switch (type) {
             case 'string':
                 return '"' + value + '"'
             case 'number':
                 if (isFinite(value)) return String(value)
-                // TODO: Forward to preserveClass.
-                break
+                return stringifyObject({ value: 'Infinity', classConstructor: 'Number' })
             case 'bigint':
-                // TODO: Forward to preserveClass.
-                console.log('Skipped BigInt:', key, value)
-                break
+                return stringifyObject({ value: value.toString(), classConstructor: 'BigInt' })
             case 'boolean':
                 return String(value)
             case 'symbol':
@@ -69,54 +67,63 @@ function stringify(obj, replacer, space) {
             case 'undefined':
                 return ''
             case 'object':
-                if (obj === null) return '' + obj
+                if (value === null) return '' + value
                 return preserveClass()
             case 'function':
                 console.log('Skipped function:', key, value)
                 break
             default:
-                console.log('Default case, how?:', key, value)
-                break
+                throw new Error('Unknown variable type:', type, 'from (key, value):', key, ',', value)
         }
         function preserveClass() {
             let newValue = {}
             switch (value.constructor.name) {
-                case 'Map': // Bug: doesn't stringify these objects
-                    for (let [key, val] of value)
-                        newValue[key] = val
+                case 'Object': return stringifyObject(value)
+                case 'Array': return stringifyArray(value)
+                case 'Map':
+                    newValue = { source: [] }
+                    value.forEach((value, key) => newValue.source.push([key, value]))
                     break
-                case 'Date': // JSON.stringify skips date objects. TODO: Self-made stringify method
-                    newValue = { value: value.toString() }
+                case 'Date':
+                    newValue = { value: value.toISOString() }
                     break
                 case 'RegExp':
                     newValue = { source: value.source, flags: value.flags }
-                    break
-                case 'Infinity':
                     break
                 case 'BigInt':
                     newValue = { value: value.toString() }
                     break
                 default:
-                    return value
+                    // check custom classes
+                    break
             }
             Object.assign(newValue, value, { classConstructor: value.constructor.name })
-            return newValue
+            return stringifyObject(newValue)
         }
-        function stringifyArray() {
-
-        }
-        function stringifyObject(obj) {
-            const eol = space ? '\n' : '', spacer = space ? ' ' : ''
+        function stringifyArray(array) {
             let separator = ''
-            let result = '{' + eol
-            const fields = Object.getOwnPropertyNames(obj)
+            let result = '['
             ++nesting
-            for (let field of fields) {
-                result += space.repeat(nesting) + `"${field}"` + spacer + recursive(field, obj[field]) + separator + eol
+            for (let element of array) {
+                result += separator + eol + space.repeat(nesting) + recursive('', element)
                 separator = ','
             }
             --nesting
-            return result + space.repeat(nesting) + '}'
+            return result + eol + space.repeat(nesting) + ']'
+        }
+        function stringifyObject(obj) {
+            let separator = ''
+            let result = '{'
+            const fields = Object.getOwnPropertyNames(obj)
+            ++nesting
+            for (let field of fields) {
+                const fieldValue = recursive(field, obj[field])
+                if (fieldValue === '') continue
+                result += separator + eol + space.repeat(nesting) + `"${field}":` + spacer + fieldValue
+                separator = ','
+            }
+            --nesting
+            return result + eol + space.repeat(nesting) + '}'
         }
     }
 }
