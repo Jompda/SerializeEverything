@@ -1,0 +1,8 @@
+{
+    "name": "serialize-everything",
+    "version": "0.0.2",
+    "description": "Serialize and deserialize all javascript objects, no matter what.",
+    "main": "index.js",
+    "author": "Joni Rapo",
+    "license": "ISC"
+}
