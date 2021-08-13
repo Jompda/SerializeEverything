@@ -1,4 +1,3 @@
-// Try to overcome https://www.npmjs.com/package/serialize-javascript
 
 
 /**

@@ -42,7 +42,7 @@ const a = new TestClass({
 })
 console.log(a)
 
-const b = stringify(a, (key, value) => value, '  ')
+const b = stringify(a, (key, value) => value, '    ')
 console.log(b)
 
 const c = parse(b)
