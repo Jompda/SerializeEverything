@@ -24,7 +24,7 @@ const a = new TestClass({
     null: null,
     undefined: undefined,
     number: 1,
-    string: 'yes',
+    string: 'yes', // Cannot contain escape characters because they don't get escaped yet.
     boolean: false,
     array: ['sure', 'sure2', new TestClass({
         testValue: 'very'
@@ -36,7 +36,7 @@ const a = new TestClass({
     nan: NaN,
     infinity: Infinity,
     neginfinity: -Infinity,
-    //regex: /([^\s]+)/g, // TODO: Escape every escape character
+    regex: /(.*)/g, // Cannot contain escape characters because they don't get escaped yet.
     function: () => { return true },
     bigint: BigInt(10)
 })
