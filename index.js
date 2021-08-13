@@ -59,7 +59,7 @@ function stringify(obj, replacer = (/**@type {string}*/key, value) => value, spa
     }
     return recursive('', obj)
     function recursive(key, value) {
-        if (replacer) value = replacer(key, value)
+        value = replacer(key, value)
         const type = typeof value
         switch (type) {
             case 'string': return `"${value}"`
