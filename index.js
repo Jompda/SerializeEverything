@@ -46,12 +46,19 @@ function defineSerializable(clss) {
 
 
 /**
+ * @callback replacer
+ * @param {string} key
+ * @param {any} value 
+ * @returns {any}
+ */
+
+/**
  * @param {any} obj 
- * @param {function(string, any)} replacer 
+ * @param {replacer} replacer 
  * @param {string} space 
  * @returns {string}
  */
-function stringify(obj, replacer, space = '') {
+function stringify(obj, replacer = undefined, space = '') {
     const eol = space ? '\n' : '', spacer = space ? ' ' : ''
     let nestingLvl = 0, nesting = ''
     function updateNesting(delta) {
@@ -141,36 +148,43 @@ function stringify(obj, replacer, space = '') {
 
 
 /**
- * @param {string} str 
- * @param {function(string, any)} reviver 
+ * @callback reviver
+ * @param {string} key 
+ * @param {any} value 
  * @returns {any}
  */
-function parse(str, reviver) {
+
+/**
+ * @param {string} str 
+ * @param {reviver} reviver 
+ * @returns {any}
+ */
+function parse(str, reviver = (key, value) => value) {
     const parsed = JSON.parse(str)
     return recursive('', parsed)
     function recursive(key, value) {
         const type = typeof value
-        if (type !== 'object' || value === null) return value
+        if (type !== 'object' || value === null) return reviver(key, value)
         if (value.constructor.name === 'Array') {
             for (let i = 0; i < value.length; i++)
                 value[i] = recursive('', value[i])
-            return value
+            return reviver(key, value)
         }
-        if (!('classConstructor' in value)) return recursiveObject(value)
+        if (!('classConstructor' in value)) return reviver(key, recursiveObject(value))
         switch (value.classConstructor) {
-            case 'Number': return Number(value.source)
-            case 'Map': return new Map(value.source)
-            case 'Set': return new Set(value.source)
-            case 'Date': return new Date(value.source)
-            case 'RegExp': return new RegExp(value.source, value.flags)
-            case 'BigInt': return BigInt(value.source)
+            case 'Number': return reviver(key, Number(value.source))
+            case 'Map': return reviver(key, new Map(value.source))
+            case 'Set': return reviver(key, new Set(value.source))
+            case 'Date': return reviver(key, new Date(value.source))
+            case 'RegExp': return reviver(key, new RegExp(value.source, value.flags))
+            case 'BigInt': return reviver(key, BigInt(value.source))
             default:
                 const clss = serializables.get(value.classConstructor)
                 if (clss) {
                     value = clss._deserialize(key, value)
                     if (typeof value !== 'object') throw new Error('Serializable object should not change variable type.')
                 }
-                return recursiveObject(value)
+                return reviver(key, recursiveObject(value))
         }
     }
     function recursiveObject(value) {
