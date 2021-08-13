@@ -46,19 +46,11 @@ function defineSerializable(clss) {
 
 
 /**
- * @callback replacer
- * @param {string} key
- * @param {any} value 
- * @returns {any}
- */
-
-/**
  * @param {any} obj 
- * @param {replacer} replacer 
  * @param {string} space 
  * @returns {string}
  */
-function stringify(obj, replacer = undefined, space = '') {
+function stringify(obj, replacer = (/**@type {string}*/key, value) => value, space = '') {
     const eol = space ? '\n' : '', spacer = space ? ' ' : ''
     let nestingLvl = 0, nesting = ''
     function updateNesting(delta) {
@@ -148,18 +140,10 @@ function stringify(obj, replacer = undefined, space = '') {
 
 
 /**
- * @callback reviver
- * @param {string} key 
- * @param {any} value 
- * @returns {any}
- */
-
-/**
  * @param {string} str 
- * @param {reviver} reviver 
  * @returns {any}
  */
-function parse(str, reviver = (key, value) => value) {
+function parse(str, reviver = (/**@type {string}*/key, value) => value) {
     const parsed = JSON.parse(str)
     return recursive('', parsed)
     function recursive(key, value) {
