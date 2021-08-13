@@ -3,6 +3,9 @@
     "version": "0.0.2",
     "description": "Serialize and deserialize all javascript objects, no matter what.",
     "main": "index.js",
+    "scripts": {
+        "test": "node test.js"
+    },
     "author": "Joni Rapo",
     "license": "ISC"
 }
