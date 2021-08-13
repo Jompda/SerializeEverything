@@ -61,7 +61,7 @@ function stringify(obj, replacer = (/**@type {string}*/key, value) => value, spa
         value = replacer(key, value)
         const type = typeof value
         switch (type) {
-            case 'string': return `"${value}"`
+            case 'string': return `"${escapeBackSlashes(value)}"`
             case 'boolean': return String(value)
             case 'symbol': throw new Error('Symbols are not supported.')
             case 'undefined': return ''
@@ -134,6 +134,13 @@ function stringify(obj, replacer = (/**@type {string}*/key, value) => value, spa
             updateNesting(-1)
             return result + eol + nesting + '}'
         }
+    }
+    function escapeBackSlashes(str) {
+        let i = str.length
+        while (--i > -1)
+            if (str.charAt(i) === '\\')
+                str = str.slice(0, i) + '\\' + str.slice(i)
+        return str
     }
 }
 

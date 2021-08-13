@@ -25,7 +25,7 @@ stringify(new TestClass({
     null: null,
     undefined: undefined,
     number: 1,
-    string: 'yes', // Cannot contain escape characters because they don't get escaped yet.
+    string: 'yes',
     boolean: false,
     array: ['sure', 'sure2', new TestClass({
         testValue: 'very'
@@ -37,7 +37,7 @@ stringify(new TestClass({
     nan: NaN,
     infinity: Infinity,
     neginfinity: -Infinity,
-    regex: /(.*)/g, // Cannot contain escape characters because they don't get escaped yet.
+    regex: /([^\s]+)/g,
     function: () => { return true }, // Currently gets replaced by a placeholder string.
     bigint: BigInt(10)
 }), undefined, '    ')
@@ -79,7 +79,7 @@ The above produces the following output:
         "classConstructor": "Set"
     },
     "date": {
-        "source": "2021-08-13T14:39:36.779Z",
+        "source": "2021-08-13T22:09:22.804Z",
         "classConstructor": "Date"
     },
     "nan": {
@@ -95,7 +95,7 @@ The above produces the following output:
         "classConstructor": "Number"
     },
     "regex": {
-        "source": "(.*)",
+        "source": "([^\\s]+)",
         "flags": "g",
         "classConstructor": "RegExp"
     },
@@ -112,7 +112,7 @@ After which parsing is as easy this:
 ```javascript
 parse(<THE_STRINGIFIED_OUTPUT>)
 ```
-Produces the following structure:
+Producing the following structure:
 ```
 TestClass {
   null: null,
@@ -123,12 +123,12 @@ TestClass {
   object: { testField: true, anotherField: 41 },
   map: Map(1) { 'a' => 1 },
   set: Set(2) { 123, 456 },
-  date: 2021-08-13T14:39:36.779Z,
+  date: 2021-08-13T22:09:22.804Z,
   nan: NaN,
   infinity: Infinity,
   neginfinity: -Infinity,
-  regex: /(.*)/g,
-  function: 'FunctionPlaceholder', // Replaced with a placeholder.
+  regex: /([^\s]+)/g,
+  function: 'FunctionPlaceholder',
   bigint: 10n
 }
 ```
