@@ -37,12 +37,12 @@ const a = new TestClass({
     infinity: Infinity,
     neginfinity: -Infinity,
     regex: /(.*)/g, // Cannot contain escape characters because they don't get escaped yet.
-    function: () => { return true },
+    function: () => { return true }, // Currently gets replaced by a placeholder string.
     bigint: BigInt(10)
 })
 console.log(a)
 
-const b = stringify(a, undefined, '  ')
+const b = stringify(a, (key, value) => value, '  ')
 console.log(b)
 
 const c = parse(b)
