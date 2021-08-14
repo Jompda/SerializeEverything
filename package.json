@@ -4,7 +4,8 @@
     "description": "Serialize and deserialize all javascript objects, no matter what.",
     "main": "index.js",
     "scripts": {
-        "test": "node test.js"
+        "test": "node test/test.js",
+        "perftest": "node test/performancetest.js"
     },
     "author": "Joni Rapo",
     "license": "ISC"

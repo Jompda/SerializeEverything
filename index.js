@@ -1,9 +1,4 @@
-
-
 let classConstructorFieldName = '_SE-CLASS-CONSTRUCTOR'
-let eol, spacer, nestingLvl, nesting, _space, recursive
-const updateNesting = delta =>
-    nesting = _space.repeat(nestingLvl += delta)
 
 
 /**
@@ -45,7 +40,7 @@ class Serializable {
 /**@type {Map<string, any>}*/
 const serializables = new Map([
     ['Number', {
-        parse: value => Number(value.source)
+        deserialize: (key, value) => Number(value.source)
     }],
     ['Array', {
         stringify: value => stringifyArray(value)
@@ -55,24 +50,31 @@ const serializables = new Map([
             const result = { source: [], [classConstructorFieldName]: value.constructor.name }
             value.forEach((mapValue, key) => result.source.push([key, mapValue]))
             return result
-        }
+        },
+        deserialize: (key, value) => new Map(value.source)
     }],
     ['Set', {
         serialize: (key, value) => {
             const result = { source: [], [classConstructorFieldName]: value.constructor.name }
             value.forEach(setValue => result.source.push(setValue))
             return result
-        }
+        },
+        deserialize: (key, value) => new Set(value.source)
     }],
     ['Date', {
         serialize: (key, value) => {
             return { source: value.toISOString(), [classConstructorFieldName]: value.constructor.name }
-        }
+        },
+        deserialize: (key, value) => new Date(value.source)
     }],
     ['RegExp', {
         serialize: (key, value) => {
             return { source: value.source, flags: value.flags, [classConstructorFieldName]: value.constructor.name }
-        }
+        },
+        deserialize: (key, value) => new RegExp(value.source, value.flags)
+    }],
+    ['BigInt', {
+        deserialize: (key, value) => BigInt(value.source)
     }]
 ])
 
@@ -80,6 +82,16 @@ const serializables = new Map([
 function defineSerializable(clss) {
     serializables.set(clss.name, clss)
 }
+
+
+
+/*
+ * STRINGIFY
+ */
+
+let eol, spacer, nestingLvl, nesting, _space, _replacer
+const updateNesting = delta =>
+    nesting = _space.repeat(nestingLvl += delta)
 
 
 /**
@@ -93,92 +105,56 @@ function stringify(obj, replacer = (/**@type {string}*/key, value) => value, spa
     nestingLvl = 0
     nesting = ''
     _space = space
-
-    recursive = (key, value) => {
-        value = replacer(key, value)
-        switch (typeof value) {
-            case 'string': return `"${escapeBackSlashes(value)}"`
-            case 'boolean': return String(value)
-            case 'symbol': throw new Error('Symbols are not supported.')
-            case 'undefined': return ''
-            case 'bigint': return stringifyObject({ source: value.toString(), [classConstructorFieldName]: 'BigInt' })
-            case 'number':
-                return isFinite(value) && !isNaN(value)
-                    ? String(value)
-                    : stringifyObject({ source: String(value), [classConstructorFieldName]: 'Number' })
-            case 'object':
-                return value === null
-                    ? null
-                    : preserveClass()
-            case 'function':
-                // TODO: Function serialization and deserialization.
-                return '"FunctionPlaceholder"'
-            default: throw new Error('Unknown variable type:', typeof value, 'from (key, value):', key, ',', value)
-        }
-        function preserveClass() {
-            const clss = serializables.get(value.constructor.name)
-            if (!clss) return stringifyObject(value)
-            if ('serialize' in clss) value = clss.serialize(key, value)
-            if ('stringify' in clss) return clss.stringify(value)
-            return stringifyObject(value)
-        }
-    }
-    return recursive('', obj)
+    _replacer = replacer
+    return recursiveStringify('', obj)
 }
 
 
-/**
- * @param {string} str 
- * @returns {any}
- */
-function parse(str, reviver = (/**@type {string}*/key, value) => value) {
-    const parsed = JSON.parse(str)
-    return recursive('', parsed)
-    function recursive(key, value) {
-        const type = typeof value
-        if (type !== 'object' || value === null) return reviver(key, value)
-        if (value.constructor.name === 'Array') {
-            for (let i = 0; i < value.length; i++)
-                value[i] = recursive('', value[i])
-            return reviver(key, value)
-        }
-        if (!([classConstructorFieldName] in value)) return reviver(key, recursiveObject(value))
-        switch (value[classConstructorFieldName]) {
-            case 'Number': return reviver(key, Number(value.source))
-            case 'Map': return reviver(key, new Map(value.source))
-            case 'Set': return reviver(key, new Set(value.source))
-            case 'Date': return reviver(key, new Date(value.source))
-            case 'RegExp': return reviver(key, new RegExp(value.source, value.flags))
-            case 'BigInt': return reviver(key, BigInt(value.source))
-            default:
-                const clss = serializables.get(value[classConstructorFieldName])
-                if (clss) {
-                    value = clss._deserialize(key, value)
-                    if (type !== 'object') throw new Error('Serializable object should not change variable type.')
-                }
-                return reviver(key, recursiveObject(value))
-        }
-    }
-    function recursiveObject(value) {
-        for (let field of Object.keys(value))
-            value[field] = recursive(field, value[field])
-        return value
+function recursiveStringify(key, value) {
+    value = _replacer(key, value)
+    switch (typeof value) {
+        case 'string': return `"${escapeBackSlashes(value)}"`
+        case 'boolean': return String(value)
+        case 'symbol': throw new Error('Symbols are not supported.')
+        case 'undefined': return ''
+        case 'bigint': return stringifyObject({ source: value.toString(), [classConstructorFieldName]: 'BigInt' })
+        case 'number':
+            return isFinite(value) && !isNaN(value)
+                ? String(value)
+                : stringifyObject({ source: String(value), [classConstructorFieldName]: 'Number' })
+        case 'object':
+            return value === null
+                ? null
+                : preserveClass(key, value)
+        case 'function':
+            // TODO: Function serialization and deserialization.
+            return '"FunctionPlaceholder"'
+        default: throw new Error('Unknown variable type:', typeof value, 'from (key, value):', key, ',', value)
     }
 }
 
 
-// Util
+function preserveClass(key, value) {
+    const clss = serializables.get(value.constructor.name)
+    if (!clss) return stringifyObject(value)
+    if ('serialize' in clss) value = clss.serialize(key, value)
+    if ('stringify' in clss) return clss.stringify(value)
+    return stringifyObject(value)
+}
+
+
 function stringifyArray(array) {
     let separator = ''
     let result = '['
     updateNesting(1)
     for (let element of array) {
-        result += separator + eol + nesting + recursive('', element)
+        result += separator + eol + nesting + recursiveStringify('', element)
         separator = ','
     }
     updateNesting(-1)
     return result + eol + nesting + ']'
 }
+
 
 function stringifyObject(obj) {
     const fields = Object.keys(obj)
@@ -187,7 +163,7 @@ function stringifyObject(obj) {
     let result = '{'
     updateNesting(1)
     for (let field of fields) {
-        const fieldValue = recursive(field, obj[field])
+        const fieldValue = recursiveStringify(field, obj[field])
         if (fieldValue === '') continue
         result += separator + eol + nesting + `"${field}":` + spacer + fieldValue
         separator = ','
@@ -196,12 +172,55 @@ function stringifyObject(obj) {
     return result + eol + nesting + '}'
 }
 
+
 function escapeBackSlashes(str) {
     let i = str.length
     while (--i > -1)
         if (str.charAt(i) === '\\')
             str = str.slice(0, i) + '\\' + str.slice(i)
     return str
+}
+
+
+
+/*
+ * PARSE
+ */
+
+let _reviver
+
+/**
+ * @param {string} str 
+ */
+function parse(str, reviver = (/**@type {string}*/key, value) => value) {
+    _reviver = reviver
+    return recursiveParse('', JSON.parse(str))
+}
+
+
+function recursiveParse(key, value) {
+    const type = typeof value
+    if (type !== 'object' || value === null) return _reviver(key, value)
+    if (value.constructor.name === 'Array') {
+        for (let i = 0; i < value.length; i++)
+            value[i] = recursiveParse('', value[i])
+        return _reviver(key, value)
+    }
+    if (!([classConstructorFieldName] in value)) return _reviver(key, recursiveParseObject(value))
+    const clss = serializables.get(value[classConstructorFieldName])
+    if (!clss) return _reviver(key, recursiveParseObject(value))
+
+    let deserialized
+    if ('_deserialize' in clss) deserialized = clss._deserialize(key, value)
+    else if ('deserialize' in clss) deserialized = clss.deserialize(key, value)
+    return _reviver(key, recursiveParseObject(deserialized))
+}
+
+
+function recursiveParseObject(value) {
+    for (let field of Object.keys(value))
+        value[field] = recursiveParse(field, value[field])
+    return value
 }
 
 

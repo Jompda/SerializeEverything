@@ -1,4 +1,4 @@
-const { Serializable, defineSerializable, stringify, parse } = require('./index')
+const { Serializable, defineSerializable, stringify, parse } = require('../index')
 
 
 class TestClass extends Serializable {
@@ -40,11 +40,9 @@ const a = new TestClass({
     function: () => { return true }, // Currently gets replaced by a placeholder string.
     bigint: BigInt(10)
 })
-console.log(a)
 
-const b = stringify(a, (key, value) => value, '    ')
-console.log(b)
 
-const c = parse(b)
-console.log(c)
-
+console.time('test')
+for (let i = 0; i < 1_000_000; i++)
+    parse(stringify(a))
+console.timeEnd('test')
