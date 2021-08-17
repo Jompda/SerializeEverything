@@ -37,7 +37,7 @@ const a = new TestClass({
     infinity: Infinity,
     neginfinity: -Infinity,
     regex: /([^\s]+)/g,
-    function: () => { return true }, // Currently gets replaced by a placeholder string.
+    function: (variable) => { return variable + variable },
     bigint: BigInt(10)
 })
 

@@ -75,8 +75,7 @@ function stringify(obj, replacer = (/**@type {string}*/key, value) => value, spa
                     ? null
                     : preserveClass()
             case 'function':
-                // TODO: Function serialization and deserialization.
-                return '"FunctionPlaceholder"'
+                return stringifyObject({ source: value.toString(), classConstructor: 'Function' })
             default: throw new Error('Unknown variable type:', type, 'from (key, value):', key, ',', value)
         }
         function preserveClass() {
@@ -168,6 +167,7 @@ function parse(str, reviver = (/**@type {string}*/key, value) => value) {
             case 'Date': return reviver(key, new Date(value.source))
             case 'RegExp': return reviver(key, new RegExp(value.source, value.flags))
             case 'BigInt': return reviver(key, BigInt(value.source))
+            case 'Function': return reviver(key, eval(value.source))
             default:
                 const clss = serializables.get(value.classConstructor)
                 if (clss) {

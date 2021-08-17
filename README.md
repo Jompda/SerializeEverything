@@ -38,7 +38,7 @@ stringify(new TestClass({
     infinity: Infinity,
     neginfinity: -Infinity,
     regex: /([^\s]+)/g,
-    function: () => { return true }, // Currently gets replaced by a placeholder string.
+    function: (variable) => { return variable + variable },
     bigint: BigInt(10)
 }), undefined, '    ')
 ```
@@ -79,7 +79,7 @@ The above produces the following output:
         "classConstructor": "Set"
     },
     "date": {
-        "source": "2021-08-13T22:09:22.804Z",
+        "source": "2021-08-17T17:52:52.490Z",
         "classConstructor": "Date"
     },
     "nan": {
@@ -99,7 +99,10 @@ The above produces the following output:
         "flags": "g",
         "classConstructor": "RegExp"
     },
-    "function": "FunctionPlaceholder",
+    "function": {
+        "source": "() => { return true }",
+        "classConstructor": "Function"
+    },
     "bigint": {
         "source": "10",
         "classConstructor": "BigInt"
@@ -123,12 +126,12 @@ TestClass {
   object: { testField: true, anotherField: 41 },
   map: Map(1) { 'a' => 1 },
   set: Set(2) { 123, 456 },
-  date: 2021-08-13T22:09:22.804Z,
+  date: 2021-08-17T17:52:52.490Z,
   nan: NaN,
   infinity: Infinity,
   neginfinity: -Infinity,
   regex: /([^\s]+)/g,
-  function: 'FunctionPlaceholder',
+  function: [Function (anonymous)],
   bigint: 10n
 }
 ```
