@@ -1,6 +1,6 @@
 {
     "name": "serialize-everything",
-    "version": "1.0.0",
+    "version": "1.0.1",
     "description": "Serialize and deserialize all javascript objects, no matter what.",
     "main": "index.js",
     "scripts": {
