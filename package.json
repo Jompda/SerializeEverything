@@ -7,6 +7,14 @@
         "test": "node test/test.js",
         "perftest": "node test/performancetest.js"
     },
+    "repository": {
+        "type": "git",
+        "url": "git+https://github.com/Jompda/SerializeEverything.git"
+    },
     "author": "Joni Rapo",
-    "license": "ISC"
+    "license": "ISC",
+    "bugs": {
+        "url": "https://github.com/Jompda/SerializeEverything/issues"
+    },
+    "homepage": "https://github.com/Jompda/SerializeEverything#readme"
 }

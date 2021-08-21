@@ -3,7 +3,7 @@ Serialize and deserialize all javascript objects, no matter what.
 
 
 ## Usage
-Usage is quite similar to JSON stringify / parse, except for the serializing part.
+Usage is quite similar to JSON stringify / parse, except custom Serializables.
 
 ```javascript
 const { Serializable, defineSerializable, stringify, parse } = require('serialize-everything')
@@ -55,7 +55,7 @@ The above produces the following output:
         "sure2",
         {
             "testValue": "very",
-            "classConstructor": "TestClass"
+            "_SE-CLASS-CONSTRUCTOR": "TestClass"
         }
     ],
     "object": {
@@ -69,45 +69,45 @@ The above produces the following output:
                 1
             ]
         ],
-        "classConstructor": "Map"
+        "_SE-CLASS-CONSTRUCTOR": "Map"
     },
     "set": {
         "source": [
             123,
             456
         ],
-        "classConstructor": "Set"
+        "_SE-CLASS-CONSTRUCTOR": "Set"
     },
     "date": {
-        "source": "2021-08-17T17:52:52.490Z",
-        "classConstructor": "Date"
+        "source": "2021-08-21T16:37:27.611Z",
+        "_SE-CLASS-CONSTRUCTOR": "Date"
     },
     "nan": {
         "source": "NaN",
-        "classConstructor": "Number"
+        "_SE-CLASS-CONSTRUCTOR": "Number"
     },
     "infinity": {
         "source": "Infinity",
-        "classConstructor": "Number"
+        "_SE-CLASS-CONSTRUCTOR": "Number"
     },
     "neginfinity": {
         "source": "-Infinity",
-        "classConstructor": "Number"
+        "_SE-CLASS-CONSTRUCTOR": "Number"
     },
     "regex": {
         "source": "([^\\s]+)",
         "flags": "g",
-        "classConstructor": "RegExp"
+        "_SE-CLASS-CONSTRUCTOR": "RegExp"
     },
     "function": {
-        "source": "() => { return true }",
-        "classConstructor": "Function"
+        "source": "(variable) => { return variable + variable }",
+        "_SE-CLASS-CONSTRUCTOR": "Function"
     },
     "bigint": {
         "source": "10",
-        "classConstructor": "BigInt"
+        "_SE-CLASS-CONSTRUCTOR": "BigInt"
     },
-    "classConstructor": "TestClass"
+    "_SE-CLASS-CONSTRUCTOR": "TestClass"
 }
 ```
 
@@ -116,7 +116,7 @@ After which parsing is as easy this:
 parse(<THE_STRINGIFIED_OUTPUT>)
 ```
 Producing the following structure:
-```
+```javascript
 TestClass {
   null: null,
   number: 1,
@@ -126,7 +126,7 @@ TestClass {
   object: { testField: true, anotherField: 41 },
   map: Map(1) { 'a' => 1 },
   set: Set(2) { 123, 456 },
-  date: 2021-08-17T17:52:52.490Z,
+  date: 2021-08-21T16:37:27.611Z,
   nan: NaN,
   infinity: Infinity,
   neginfinity: -Infinity,

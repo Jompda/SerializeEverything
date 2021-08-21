@@ -1,3 +1,4 @@
+let classConstructorFieldName = '_SE-CLASS-CONSTRUCTOR'
 
 
 /**
@@ -29,7 +30,7 @@ class Serializable {
      * @returns {Serializable}
      */
     static _deserialize(key, value) {
-        delete value.classConstructor
+        delete value[classConstructorFieldName]
         return this.deserialize(key, value)
     }
 }
@@ -39,6 +40,9 @@ class Serializable {
 const serializables = new Map()
 
 
+/**
+ * @param {Serializable} clss 
+ */
 function defineSerializable(clss) {
     serializables.set(clss.name, clss)
 }
@@ -65,17 +69,17 @@ function stringify(obj, replacer = (/**@type {string}*/key, value) => value, spa
             case 'boolean': return String(value)
             case 'symbol': throw new Error('Symbols are not supported.')
             case 'undefined': return ''
-            case 'bigint': return stringifyObject({ source: value.toString(), classConstructor: 'BigInt' })
+            case 'bigint': return stringifyObject({ source: value.toString(), [classConstructorFieldName]: 'BigInt' })
             case 'number':
                 return isFinite(value) && !isNaN(value)
                     ? String(value)
-                    : stringifyObject({ source: String(value), classConstructor: 'Number' })
+                    : stringifyObject({ source: String(value), [classConstructorFieldName]: 'Number' })
             case 'object':
                 return value === null
                     ? null
                     : preserveClass()
             case 'function':
-                return stringifyObject({ source: value.toString(), classConstructor: 'Function' })
+                return stringifyObject({ source: value.toString(), [classConstructorFieldName]: 'Function' })
             default: throw new Error('Unknown variable type:', type, 'from (key, value):', key, ',', value)
         }
         function preserveClass() {
@@ -104,7 +108,7 @@ function stringify(obj, replacer = (/**@type {string}*/key, value) => value, spa
                     result = value.serialize(key)
                     break
             }
-            Object.assign(result, value, { classConstructor: value.constructor.name })
+            Object.assign(result, value, { [classConstructorFieldName]: value.constructor.name })
             return stringifyObject(result)
         }
         function stringifyArray(array) {
@@ -159,8 +163,8 @@ function parse(str, reviver = (/**@type {string}*/key, value) => value) {
                 value[i] = recursive('', value[i])
             return reviver(key, value)
         }
-        if (!('classConstructor' in value)) return reviver(key, recursiveObject(value))
-        switch (value.classConstructor) {
+        if (!(classConstructorFieldName in value)) return reviver(key, recursiveObject(value))
+        switch (value[classConstructorFieldName]) {
             case 'Number': return reviver(key, Number(value.source))
             case 'Map': return reviver(key, new Map(value.source))
             case 'Set': return reviver(key, new Set(value.source))
@@ -169,7 +173,7 @@ function parse(str, reviver = (/**@type {string}*/key, value) => value) {
             case 'BigInt': return reviver(key, BigInt(value.source))
             case 'Function': return reviver(key, eval(value.source))
             default:
-                const clss = serializables.get(value.classConstructor)
+                const clss = serializables.get(value[classConstructorFieldName])
                 if (clss) {
                     value = clss._deserialize(key, value)
                     if (typeof value !== 'object') throw new Error('Serializable object should not change variable type.')
